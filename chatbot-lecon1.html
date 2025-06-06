@@ -1,0 +1,667 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creative Indonesian Herbs Chatbot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    #chat-container {
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: white;
+      border-radius: 10px;
+      height: 400px;
+      overflow-y: auto;
+    }
+    #chat-output {
+      margin-bottom: 10px;
+    }
+    .message {
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .user {
+      background-color: #d1e7dd;
+      text-align: right;
+    }
+    .bot {
+      background-color: #e9ecef;
+      text-align: left;
+    }
+    #user-input {
+      width: 80%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    img {
+      max-width: 200px;
+      margin: 10px 0;
+      display: block;
+      animation: bounceIn 0.8s ease-out;
+    }
+    .typing {
+      color: #555;
+      font-style: italic;
+    }
+    .suggested-questions {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounceIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <h2>🌿 Indonesian Herbs Chatbot 🌿</h2>
+  <p>Dive into the vibrant world of Indonesian herbs! Ask: "Give me one type of plant used in Indonesia?" or "Where is Kunyit found?"</p>
+  <div id="chat-container">
+    <div id="chat-output"></div>
+  </div>
+  <input type="text" id="user-input" placeholder="Type your question...">
+  <button onclick="sendMessage()">Send</button>
+  <div class="suggested-questions">
+    Suggested: "Give me one type of plant!" | "Show Jahe’s image" | "Where is Daun Kelor found?"
+  </div>
+
+  <script>
+    // Herb dataset with location, funFact, and persona
+    const herbs = [
+      {
+        name: "Kunyit",
+        scientific: "Curcuma longa",
+        compounds: "Curcumin",
+        uses: "Anti-inflammatory, digestive, skincare",
+        class: "Curcuminoid, Terpenoid",
+        cultivation: "Needs warm climate; grows well organically",
+        parts: "Rhizome, Leaves",
+        preparations: "Boiled with tamarind for Kunyit asam, jamu, ground for cooking, juiced",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Curcuma_longa_roots.jpg/320px-Curcuma_longa_roots.jpg",
+        formula: "Curcumin: C21H20O6",
+        location: "Java, Sumatra, Bali, Kalimantan",
+        funFact: "Kunyit’s golden hue lights up Javanese wedding ceremonies!",
+        persona: "Golden Guardian"
+      },
+      {
+        name: "Jahe",
+        scientific: "Zingiber officinale",
+        compounds: "Gingerol, Shogaol",
+        uses: "Cold relief, nausea, digestion",
+        class: "Phenolic, Terpenoid",
+        cultivation: "Easy in pots or ground, minimal pesticide need",
+        parts: "Rhizome",
+        preparations: "Sliced or ground for tea (Wedang jahe), in cooking, in jamu, candied",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Jahe_Emprit_Iris.jpg/320px-Jahe_Emprit_Iris.jpg",
+        formula: "Gingerol: C17H26O4",
+        location: "Java, Sumatra, Sulawesi, Bali",
+        funFact: "Jahe’s fiery kick warms hearts in Balinese markets!",
+        persona: "Fiery Healer"
+      },
+      {
+        name: "Temulawak",
+        scientific: "Curcuma zanthorrhiza",
+        compounds: "Xanthorrhizol",
+        uses: "Liver tonic, anti-inflammatory",
+        class: "Sesquiterpene, Curcuminoid",
+        cultivation: "Sustainable under agroforestry",
+        parts: "Rhizome",
+        preparations: "Boiled for jamu, ground for traditional medicine, used in cooking",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/%22%2Barya%2B%22_kencur_bunga_Curcuma_zanthorrhiza_2023_2.jpg/320px-%22%2Barya%2B%22_kencur_bunga_Curcuma_zanthorrhiza_2023_2.jpg",
+        formula: "Xanthorrhizol: C15H22O",
+        location: "Java, Sumatra, Kalimantan",
+        funFact: "Temulawak is a star in Javanese jamu stalls!",
+        persona: "Liver’s Ally"
+      },
+      {
+        name: "Daun Kelor",
+        scientific: "Moringa oleifera",
+        compounds: "Quercetin, Kaempferol",
+        uses: "Immunity, nutrition supplement",
+        class: "Flavonoid, Alkaloid",
+        cultivation: "Thrives in dry conditions, drought-tolerant",
+        parts: "Leaves, Pods, Seeds",
+        preparations: "Leaves fresh or dried as powder, pods cooked, seeds for oil or water purification",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Moringa_oleifera_TP04_seed_grains.jpg/320px-Moringa_oleifera_TP04_seed_grains.jpg",
+        formula: "Quercetin: C15H10O7",
+        location: "East Nusa Tenggara, Java, Bali, Sumatra",
+        funFact: "Daun Kelor is called the ‘miracle tree’ in East Nusa Tenggara!",
+        persona: "Nutrient Ninja"
+      },
+      {
+        name: "Daun Sirsak",
+        scientific: "Annona muricata",
+        compounds: "Acetogenins, Annonacin",
+        uses: "Anticancer, antiparasitic",
+        class: "Alkaloid, Acetogenin",
+        cultivation: "Requires no chemical fertilizers",
+        parts: "Leaves, Fruit",
+        preparations: "Leaves boiled for tea, fruit eaten fresh or in smoothies, leaf extracts",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Annona_muricata_1.jpg/320px-Annona_muricata_1.jpg",
+        formula: "Annonacin: C35H64O7",
+        location: "Java, Sumatra, Sulawesi, Maluku",
+        funFact: "Sirsak’s fruit is a sweet treat in Maluku markets!",
+        persona: "Tropical Warrior"
+      },
+      {
+        name: "Pegagan",
+        scientific: "Centella asiatica",
+        compounds: "Asiaticoside, Madecassoside",
+        uses: "Memory booster, wound healing",
+        class: "Triterpenoid, Saponin",
+        cultivation: "Can be grown hydroponically or organically",
+        parts: "Leaves",
+        preparations: "Fresh or dried in teas, eaten as vegetable, topical paste",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Centella_asiatica_04.jpg/320px-Centella_asiatica_04.jpg",
+        formula: "Asiaticoside: C48H78O19",
+        location: "Java, Sumatra, Bali, Kalimantan",
+        funFact: "Pegagan is a brain-boosting snack in Balinese salads!",
+        persona: "Mind Mender"
+      },
+      {
+        name: "Jinten Hitam",
+        scientific: "Nigella sativa",
+        compounds: "Thymoquinone",
+        uses: "Immunomodulator, anti-allergy",
+        class: "Alkaloid, Essential oil",
+        cultivation: "Hardy, grows with minimal input",
+        parts: "Seeds",
+        preparations: "Ground or whole in cooking, oil, capsules, in jamu",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/IMG_0502_Nigella_sativa.jpg/320px-IMG_0502_Nigella_sativa.jpg",
+        formula: "Thymoquinone: C10H12O2",
+        location: "Java, Sumatra, Aceh",
+        funFact: "Jinten Hitam is a sacred seed in Acehnese remedies!",
+        persona: "Immune Shield"
+      },
+      {
+        name: "Sambiloto",
+        scientific: "Andrographis paniculata",
+        compounds: "Andrographolide",
+        uses: "Antiviral, liver support",
+        class: "Diterpenoid lactone",
+        cultivation: "Pest-resistant; eco-friendly",
+        parts: "Leaves, Stems",
+        preparations: "Boiled for tea, extracts, dried for capsules",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Andrographis-paniculata.jpg/320px-Andrographis-paniculata.jpg",
+        formula: "Andrographolide: C20H30O5",
+        location: "Java, Sumatra, Kalimantan, Sulawesi",
+        funFact: "Sambiloto’s bitter leaves are heroes in Javanese healing!",
+        persona: "Bitter Protector"
+      },
+      {
+        name: "Lidah Buaya",
+        scientific: "Aloe vera",
+        compounds: "Aloin, Polysaccharides",
+        uses: "Skin healing, digestion",
+        class: "Anthraquinone, Polysaccharide",
+        cultivation: "Requires little water, thrives organically",
+        parts: "Leaf Gel",
+        preparations: "Topical gel, juiced for drinks, in cosmetics",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Aloe_vera_en_cerro_Santa_Luc%C3%ADa.jpg/320px-Aloe_vera_en_cerro_Santa_Luc%C3%ADa.jpg",
+        formula: "Aloin: C21H22O9",
+        location: "Java, Bali, East Nusa Tenggara",
+        funFact: "Lidah Buaya soothes sunburns in Balinese spas!",
+        persona: "Soothing Sage"
+      },
+      {
+        name: "Meniran",
+        scientific: "Phyllanthus niruri",
+        compounds: "Phyllanthin, Hypophyllanthin",
+        uses: "Hepatoprotective, diuretic",
+        class: "Lignan, Alkaloid",
+        cultivation: "Wild-harvestable or garden-grown",
+        parts: "Whole Plant, Leaves",
+        preparations: "Boiled for tea, dried for extracts, in jamu",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Phyllanthus_niruri_.jpg/320px-Phyllanthus_niruri_.jpg",
+        formula: "Phyllanthin: C24H34O6",
+        location: "Java, Sumatra, Kalimantan, Papua",
+        funFact: "Meniran grows wild in Papuan gardens!",
+        persona: "Tiny Tonic"
+      },
+      {
+        name: "Kayu Manis",
+        scientific: "Cinnamomum verum",
+        compounds: "Cinnamaldehyde",
+        uses: "Anti-diabetic, antioxidant",
+        class: "Phenylpropanoid",
+        cultivation: "Grows in forest gardens, climate-friendly",
+        parts: "Bark",
+        preparations: "Ground for cooking, boiled for tea, in jamu",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Cinnamomum_verum_spices.jpg/320px-Cinnamomum_verum_spices.jpg",
+        formula: "Cinnamaldehyde: C9H8O",
+        location: "Sumatra, Maluku, Sulawesi",
+        funFact: "Kayu Manis spices up Maluku’s ancient trade routes!",
+        persona: "Sweet Spice"
+      },
+      {
+        name: "Lengkuas",
+        scientific: "Alpinia galanga",
+        compounds: "Galangin",
+        uses: "Respiratory aid, antimicrobial",
+        class: "Flavonoid, Terpenoid",
+        cultivation: "Perennial, low maintenance",
+        parts: "Rhizome",
+        preparations: "Sliced or ground for cooking, boiled for tea, in jamu",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Alpinia_galanga_2980.jpg/320px-Alpinia_galanga_2980.jpg",
+        formula: "Galangin: C15H10O5",
+        location: "Java, Sumatra, Bali",
+        funFact: "Lengkuas adds zest to Balinese sate lilit!",
+        persona: "Zesty Zealot"
+      },
+      {
+        name: "Bawang Putih",
+        scientific: "Allium sativum",
+        compounds: "Allicin",
+        uses: "Antibacterial, heart health",
+        class: "Organosulfur compound",
+        cultivation: "Companion planting improves sustainability",
+        parts: "Bulb",
+        preparations: "Crushed for cooking, raw, or in extracts",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/GarlicBasket.jpg/320px-GarlicBasket.jpg",
+        formula: "Allicin: C6H10OS2",
+        location: "Java, Sumatra, Bali, Sulawesi",
+        funFact: "Bawang Putih wards off colds in Javanese soups!",
+        persona: "Bold Bulb"
+      },
+      {
+        name: "Bawang Merah",
+        scientific: "Allium cepa",
+        compounds: "Quercetin",
+        uses: "Anti-inflammatory, antioxidant",
+        class: "Flavonoid, Sulfur compound",
+        cultivation: "Can be grown with crop rotation",
+        parts: "Bulb",
+        preparations: "Chopped for cooking, raw, or in extracts",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Shallot_bawang_merah.jpg/320px-Shallot_bawang_merah.jpg",
+        formula: "Quercetin: C15H10O7",
+        location: "Java, Sumatra, Brebes, Bali",
+        funFact: "Brebes is famous for its pungent Bawang Merah!",
+        persona: "Savory Star"
+      },
+      {
+        name: "Belimbing Wuluh",
+        scientific: "Averrhoa bilimbi",
+        compounds: "Oxalic acid",
+        uses: "Cough remedy, antiseptic",
+        class: "Organic acid",
+        cultivation: "No chemicals needed; grows in home gardens",
+        parts: "Fruit",
+        preparations: "Juiced, boiled for syrup, used in cooking",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Averrhoa_bilimbi_Linn.jpg/320px-Averrhoa_bilimbi_Linn.jpg",
+        formula: "Oxalic acid: C2H2O4",
+        location: "Java, Sumatra, Sulawesi, Bali",
+        funFact: "Belimbing Wuluh’s tart juice zings in Sumatran dishes!",
+        persona: "Tangy Trickster"
+      },
+      {
+        name: "Daun Dewa",
+        scientific: "Gynura procumbens",
+        compounds: "Flavonoids, Saponins",
+        uses: "Blood sugar regulation, anti-inflammatory",
+        class: "Flavonoid, Saponin",
+        cultivation: "Commonly organic in local gardens",
+        parts: "Leaves",
+        preparations: "Fresh or boiled for tea, eaten as vegetable",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Gynura_procumbens_%28Diabetes_plant%29_%282%29.jpg/320px-Gynura_procumbens_%28Diabetes_plant%29_%282%29.jpg",
+        formula: "Quercetin (example): C15H10O7",
+        location: "Java, Sumatra, Bali",
+        funFact: "Daun Dewa is a diabetes fighter in Javanese gardens!",
+        persona: "Healing Harmony"
+      },
+      {
+        name: "Binahong",
+        scientific: "Anredera cordifolia",
+        compounds: "Saponins, Alkaloids",
+        uses: "Wound healing, stamina booster",
+        class: "Saponin, Alkaloid",
+        cultivation: "Climbs easily, no pesticide required",
+        parts: "Leaves, Roots",
+        preparations: "Leaves boiled for tea, roots as paste, in jamu",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Anredera_cordifolia_%28DITSL%29.JPG/320px-Anredera_cordifolia_%28DITSL%29.JPG",
+        formula: "Saponin (general): C27H42O3 (varies)",
+        location: "Java, Sumatra, Kalimantan",
+        funFact: "Binahong climbs high in Kalimantan’s healing traditions!",
+        persona: "Climbing Cure"
+      },
+      {
+        name: "Jeruk Nipis",
+        scientific: "Citrus aurantifolia",
+        compounds: "Vitamin C, Limonene",
+        uses: "Detox, sore throat remedy",
+        class: "Flavonoid, Terpenoid",
+        cultivation: "Natural pest repellent, low input",
+        parts: "Fruit, Peel",
+        preparations: "Juiced for drinks, peel in cooking, in jamu",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Citrus_aurantifolia.jpg/320px-Citrus_aurantifolia.jpg",
+        formula: "Limonene: C10H16",
+        location: "Java, Bali, Sumatra, Sulawesi",
+        funFact: "Jeruk Nipis refreshes Balinese detox drinks!",
+        persona: "Citrus Spark"
+      },
+      {
+        name: "Kencur",
+        scientific: "Kaempferia galanga",
+        compounds: "Ethyl p-methoxycinnamate",
+        uses: "Anti-asthmatic, digestive aid",
+        class: "Phenylpropanoid",
+        cultivation: "Grows well in shaded organic beds",
+        parts: "Rhizome",
+        preparations: "Ground for jamu, used in cooking, boiled for tea",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Cekur_%28Kaempferia_galanga%29.jpg/320px-Cekur_%28Kaempferia_galanga%29.jpg",
+        formula: "Ethyl p-methoxycinnamate: C12H14O3",
+        location: "Java, Sumatra, Bali",
+        funFact: "Kencur spices up Javanese rice dishes!",
+        persona: "Aromatic Adventurer"
+      },
+      {
+        name: "Kumis Kucing",
+        scientific: "Orthosiphon aristatus",
+        compounds: "Sinensetin, Rosmarinic acid",
+        uses: "Diuretic, kidney health",
+        class: "Flavonoid, Phenolic acid",
+        cultivation: "Widely grown in home gardens",
+        parts: "Leaves",
+        preparations: "Boiled for tea, dried for extracts",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Orthosiphon_aristatus_%28at_Mito_Botanical_Garden%2C_Ibaraki%2C_Japan%29_01.jpg/320px-Orthosiphon_aristatus_%28at_Mito_Botanical_Garden%2C_Ibaraki%2C_Japan%29_01.jpg",
+        formula: "Sinensetin: C20H20O7",
+        location: "Java, Sumatra, Bali, Kalimantan",
+        funFact: "Kumis Kucing’s ‘whiskers’ charm Balinese gardens!",
+        persona: "Whiskered Wonder"
+      },
+      {
+        name: "Sirih",
+        scientific: "Piper betle",
+        compounds: "Eugenol, Hydroxychavicol",
+        uses: "Antiseptic, oral health",
+        class: "Phenolic, Alkaloid",
+        cultivation: "Climber, grows in shaded organic systems",
+        parts: "Leaves",
+        preparations: "Chewed raw, boiled for tea, topical paste",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Piper_betle_L._%2850460736191%29.jpg/320px-Piper_betle_L._%2850460736191%29.jpg",
+        formula: "Eugenol: C10H12O2",
+        location: "Java, Sumatra, Bali, Aceh",
+        funFact: "Sirih leaves seal bonds in Acehnese betel ceremonies!",
+        persona: "Sacred Leaf"
+      },
+      {
+        name: "Mahkota Dewa",
+        scientific: "Phaleria macrocarpa",
+        compounds: "Flavonoids, Tannins",
+        uses: "Antitumor, immunity booster",
+        class: "Flavonoid, Tannin",
+        cultivation: "Native, suitable for permaculture",
+        parts: "Fruit, Leaves",
+        preparations: "Fruit boiled for tea, leaves as extracts",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Buah_Mahkota_Dewa.jpg/320px-Buah_Mahkota_Dewa.jpg",
+        formula: "Quercetin (example): C15H10O7",
+        location: "Papua, Java, Sumatra",
+        funFact: "Mahkota Dewa is a royal remedy in Papuan lore!",
+        persona: "Regal Remedy"
+      },
+      {
+        name: "Brotowali",
+        scientific: "Tinospora crispa",
+        compounds: "Tinosporaside",
+        uses: "Anti-diabetic, liver protection",
+        class: "Alkaloid, Diterpenoid",
+        cultivation: "Hardy, requires minimal input",
+        parts: "Stems, Leaves",
+        preparations: "Boiled for tea, dried for extracts",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Guduchi_%28Tinospora_crispa%29_1.jpg/320px-Guduchi_%28Tinospora_crispa%29_1.jpg",
+        formula: "Tinosporaside: C20H32O8",
+        location: "Java, Sumatra, Kalimantan, Sulawesi",
+        funFact: "Brotowali’s bitter brew guards Javanese health!",
+        persona: "Bitter Guardian"
+      },
+      {
+        name: "Temu Ireng",
+        scientific: "Curcuma aeruginosa",
+        compounds: "Germacrone",
+        uses: "Skin care, women’s health",
+        class: "Sesquiterpenoid",
+        cultivation: "Can be intercropped",
+        parts: "Rhizome",
+        preparations: "Boiled for jamu, ground for topical use",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/The_Brightness_of_Phu_Hin_Rong_Kla_1.jpg/320px-The_Brightness_of_Phu_Hin_Rong_Kla_1.jpg",
+        formula: "Germacrone: C15H22O",
+        location: "Java, Sumatra, Kalimantan",
+        funFact: "Temu Ireng beautifies skin in Javanese spas!",
+        persona: "Mystic Rhizome"
+      },
+      {
+        name: "Temu Kunci",
+        scientific: "Boesenbergia rotunda",
+        compounds: "Panduratin A",
+        uses: "Anti-obesity, digestion",
+        class: "Flavonoid, Terpenoid",
+        cultivation: "Sustainable in tropical soil",
+        parts: "Rhizome",
+        preparations: "Ground for jamu, used in cooking",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Boesenbergia_rotunda_1.jpg/320px-Boesenbergia_rotunda_1.jpg",
+        formula: "Panduratin A: C26H30O4",
+        location: "Java, Sumatra, Bali",
+        funFact: "Temu Kunci adds flavor to Balinese curries!",
+        persona: "Digestive Dynamo"
+      },
+      {
+        name: "Cengkeh",
+        scientific: "Syzygium aromaticum",
+        compounds: "Eugenol",
+        uses: "Toothache, antimicrobial",
+        class: "Phenylpropanoid",
+        cultivation: "Low pesticide need",
+        parts: "Flower Buds",
+        preparations: "Ground for cooking, boiled for tea, oil extracts",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Syzygium_aromaticum_on_tree.jpg/320px-Syzygium_aromaticum_on_tree.jpg",
+        formula: "Eugenol: C10H12O2",
+        location: "Maluku, Sulawesi, Sumatra",
+        funFact: "Cengkeh fueled Maluku’s spice trade legacy!",
+        persona: "Spice Sovereign"
+      },
+      {
+        name: "Kapulaga",
+        scientific: "Amomum compactum",
+        compounds: "Cineole, Borneol",
+        uses: "Digestive tonic, breath freshener",
+        class: "Terpenoid, Flavonoid",
+        cultivation: "Forest garden compatible",
+        parts: "Seeds",
+        preparations: "Ground for cooking, boiled for tea",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Amom_compact_101127-09542_ltn.jpg/320px-Amom_compact_101127-09542_ltn.jpg",
+        formula: "Cineole: C10H18O",
+        location: "Sumatra, Java, Kalimantan",
+        funFact: "Kapulaga freshens breath in Sumatran feasts!",
+        persona: "Aromatic Ally"
+      },
+      {
+        name: "Daun Salam",
+        scientific: "Syzygium polyanthum",
+        compounds: "Eugenol, Tannins",
+        uses: "Cooking spice, antidiabetic",
+        class: "Phenolic, Tannin",
+        cultivation: "Easily cultivated in home gardens",
+        parts: "Leaves",
+        preparations: "Used in cooking, boiled for tea",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Syzy_polyan_070404-3396_sbrg.jpg/320px-Syzy_polyan_070404-3396_sbrg.jpg",
+        formula: "Eugenol: C10H12O2",
+        location: "Java, Sumatra, Bali",
+        funFact: "Daun Salam flavors Javanese rendang!",
+        persona: "Culinary Charm"
+      },
+      {
+        name: "Tapak Liman",
+        scientific: "Elephantopus scaber",
+        compounds: "Flavonoids, Triterpenoids",
+        uses: "Fever, cough remedy",
+        class: "Flavonoid, Triterpenoid",
+        cultivation: "Natural ground cover, no chemical inputs",
+        parts: "Leaves",
+        preparations: "Boiled for tea, used as poultice",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Elephantopus_scaber_in_Narshapur_forest%2C_AP_W2_IMG_0829.jpg/320px-Elephantopus_scaber_in_Narshapur_forest%2C_AP_W2_IMG_0829.jpg",
+        formula: "Quercetin (example): C15H10O7",
+        location: "Java, Sumatra, Kalimantan, Sulawesi",
+        funFact: "Tapak Liman soothes fevers in Sulawesi villages!",
+        persona: "Fever Fighter"
+      },
+      {
+        name: "Kenikir",
+        scientific: "Cosmos caudatus",
+        compounds: "Quercetin, Chlorogenic acid",
+        uses: "Antioxidant, appetite booster",
+        class: "Flavonoid, Phenolic acid",
+        cultivation: "Grows wild or in home gardens",
+        parts: "Leaves",
+        preparations: "Eaten fresh as vegetable, boiled for tea",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Kenikir4_Pj_DSC_6549.jpg/320px-Kenikir4_Pj_DSC_6549.jpg",
+        formula: "Quercetin: C15H10O7",
+        location: "Java, Sumatra, Bali, Sulawesi",
+        funFact: "Kenikir’s leaves spark appetite in Balinese meals!",
+        persona: "Vibrant Veggie"
+      }
+    ];
+
+    // Flavonoid information
+    const flavonoidInfo = {
+      description: "Flavonoids are polyphenolic compounds with antioxidant and anti-inflammatory properties, found in herbs like Daun Kelor and Pegagan.",
+      formula: "General flavonoid structure: C15H10O2 to C15H10O7 (e.g., Quercetin: C15H10O7)",
+      image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Quercetin.svg/320px-Quercetin.svg"
+    };
+
+    // Chatbot logic
+    function sendMessage() {
+      const userInput = document.getElementById("user-input").value.trim().toLowerCase();
+      if (!userInput) return;
+
+      // Display user message
+      appendMessage(userInput, "user");
+
+      // Show typing indicator
+      appendMessage("Bot is thinking… 🌱", "bot typing");
+
+      // Simulate typing delay
+      setTimeout(() => {
+        // Remove typing indicator
+        const typingMessage = document.querySelector(".typing");
+        if (typingMessage) typingMessage.remove();
+
+        // Process and display response
+        let response = processInput(userInput);
+        appendMessage(response, "bot");
+      }, 800);
+
+      // Clear input
+      document.getElementById("user-input").value = "";
+    }
+
+    function appendMessage(text, className) {
+      const chatOutput = document.getElementById("chat-output");
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `message ${className}`;
+      messageDiv.innerHTML = text;
+      chatOutput.appendChild(messageDiv);
+      chatOutput.scrollTop = chatOutput.scrollHeight;
+    }
+
+    function processInput(input) {
+      // Random herb request
+      if (input.includes("give me one") || input.includes("name a plant") || input.includes("type of plant")) {
+        const randomHerb = herbs[Math.floor(Math.random() * herbs.length)];
+        return `🌿 Meet **${randomHerb.name}** (${randomHerb.scientific}), the ${randomHerb.persona}! Grown in ${randomHerb.location}, it’s loved for ${randomHerb.uses}. Its secret? ${randomHerb.compounds} powers its magic! <b>Fun Fact</b>: ${randomHerb.funFact} Want to see it? <img src="${randomHerb.image}" alt="${randomHerb.name}" /> <br>Challenge: Can you guess its phytochemical class? Ask me more!`;
+      }
+
+      // Connection between green chemistry, phytochemistry, and ethnoscience
+      if (input.includes("connection") && (input.includes("green chemistry") || input.includes("phytochemistry") || input.includes("ethnoscience"))) {
+        return "🔬🌿 Let’s weave a tale of science and tradition! <b>Phytochemistry</b> uncovers the magic of compounds like curcumin in Kunyit, healing with nature’s chemistry. <b>Ethnoscience</b> honors ancient wisdom, like Jahe in jamu, passed down through generations. <b>Green chemistry</b> ensures we tread lightly, growing Daun Kelor sustainably. Together, they’re a harmony of heritage and innovation! Curious about a herb’s role in this?";
+      }
+
+      // General concept responses
+      if (input.includes("phytochemistry")) {
+        return "🔬 Phytochemistry is the art of decoding plants’ chemical secrets! Think curcumin in Kunyit or flavonoids in Daun Kelor, fueling health benefits. It bridges ethnoscience’s traditions with science. Want to explore a herb’s compounds?";
+      } else if (input.includes("ethnoscience")) {
+        return "🌱 Ethnoscience celebrates Indonesia’s herbal wisdom, like brewing Jahe for colds. It blends cultural traditions with phytochemistry’s insights. Ask about a herb’s story!";
+      } else if (input.includes("green chemistry")) {
+        return "♻️ Green chemistry crafts a sustainable future, like growing Lidah Buaya with minimal water or extracting Kunyit’s curcumin waste-free. It’s phytochemistry’s eco-partner! Want a herb’s cultivation tips?";
+      } else if (input.includes("jamu")) {
+        return "🍵 Jamu is Indonesia’s liquid gold, blending herbs like Kunyit and Temulawak for health. It’s ethnoscience in a cup! Ask about a herb’s jamu role!";
+      }
+
+      // Flavonoid-specific queries
+      if (input.includes("flavonoid") && (input.includes("formula") || input.includes("structure"))) {
+        return `${flavonoidInfo.description} ${flavonoidInfo.formula}. Behold its structure: <img src="${flavonoidInfo.image}" alt="Quercetin Structure" /> or <a href="${flavonoidInfo.image}" target="_blank">View Larger</a>. Which herbs pack flavonoids? Ask away!`;
+      } else if (input.includes("flavonoid")) {
+        return `${flavonoidInfo.description} Find them in Daun Kelor and Pegagan! Want their formula or a herb’s secrets?`;
+      }
+
+      // Herb-specific queries
+      for (let herb of herbs) {
+        if (input.includes(herb.name.toLowerCase()) || input.includes(herb.scientific.toLowerCase())) {
+          if (input.includes("image") || input.includes("picture")) {
+            return `🌿 Behold ${herb.name}, the ${herb.persona}! <img src="${herb.image}" alt="${herb.name}" /> <br><a href="${herb.image}" target="_blank">See Larger</a>. <b>Fun Fact</b>: ${herb.funFact} Want its compounds or location?`;
+          } else if (input.includes("location") || input.includes("where") || input.includes("found")) {
+            return `🌏 ${herb.name}, the ${herb.persona}, thrives in ${herb.location}, Indonesia. <b>Fun Fact</b>: ${herb.funFact} Curious about its uses or chemistry?`;
+          } else if (input.includes("compound") || input.includes("chemical") || input.includes("formula")) {
+            return `🔬 ${herb.name} (${herb.scientific}), the ${herb.persona}, hides ${herb.compounds} (Formula: ${herb.formula}, Class: ${herb.class}). <b>Fun Fact</b>: ${herb.funFact} Ask about its uses or location!`;
+          } else if (input.includes("use") || input.includes("benefit")) {
+            return `🌱 ${herb.name}, the ${herb.persona}, shines for ${herb.uses}. <b>Fun Fact</b>: ${herb.funFact} Want its compounds or preparations?`;
+          } else if (input.includes("cultivation") || input.includes("grow")) {
+            return `🌿 ${herb.name}’s eco-story: ${herb.cultivation}. Grown in ${herb.location}, it’s the ${herb.persona}! <b>Fun Fact</b>: ${herb.funFact} Explore its uses or parts!`;
+          } else if (input.includes("part") || input.includes("used")) {
+            return `🌿 ${herb.name}, the ${herb.persona}, uses: ${herb.parts}. <b>Fun Fact</b>: ${herb.funFact} Ask how they’re prepared!`;
+          } else if (input.includes("preparation") || input.includes("prepare")) {
+            return `🍵 ${herb.name}, the ${herb.persona}, is crafted by: ${herb.preparations}. <b>Fun Fact</b>: ${herb.funFact} Want its class or location?`;
+          } else {
+            return `🌿 Meet ${herb.name} (${herb.scientific}), the ${herb.persona}! Found in ${herb.location}, it’s used for ${herb.uses}. Powered by ${herb.compounds} (${herb.class}, Formula: ${herb.formula}). Cultivation: ${herb.cultivation}. Parts: ${herb.parts}. Preparations: ${herb.preparations}. <b>Fun Fact</b>: ${herb.funFact} <img src="${herb.image}" alt="${herb.name}" /> Try: ‘Where is ${herb.name} found?’ or ‘Show ${herb.name}’s image’!`;
+          }
+        }
+      }
+
+      // Inquiry question prompts
+      if (input.includes("question") || input.includes("inquiry")) {
+        return "🔍 Try these: ‘Where is Daun Kelor found?’ or ‘What’s in Kunyit?’ Pick a herb or concept and let’s explore!";
+      }
+
+      // Reflection prompts
+      if (input.includes("reflect") || input.includes("reflection")) {
+        return "🤔 Reflect: What herb amazed you? How does this chatbot spark your curiosity? Why’s sustainability key for herbs? Try a herb question to dive deeper!";
+      }
+
+      // Default response
+      return "😅 I’m stumped! Try ‘Give me one type of plant!’ or ask about a herb like ‘Show Jahe’s image’ or ‘Where is Kunyit found?’ Suggested: ‘Name a plant used in Indonesia!’";
+    }
+
+    // Allow Enter key to send message
+    document.getElementById("user-input").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
